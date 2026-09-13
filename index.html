@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#2C5545">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" type="image/png" href="logo.png">
-<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" type="image/png" href="logo.png?v=2">
+<link rel="apple-touch-icon" href="logo.png?v=2">
 <link rel="manifest" href="manifest.json">
 <title>Mi Moneda</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +19,18 @@
 html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 .dn{font-family:'Playfair Display',serif}
 .hidden{display:none!important}
+.pin-screen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center}
+.pin-screen h1{font-size:2.4rem;color:var(--pr);margin-bottom:4px}
+.pin-screen .sub{color:var(--t2);font-size:.9rem;margin-bottom:36px}
+.pin-box{background:var(--sf);border-radius:var(--r);padding:28px;width:100%;max-width:300px;box-shadow:var(--sh2)}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);transition:all .2s}
+.pin-dot.filled{background:var(--pr);border-color:var(--pr)}
+.pin-pad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.pin-key{width:100%;aspect-ratio:1.6;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--bd);border-radius:12px;font-size:1.4rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;-webkit-user-select:none;user-select:none}
+.pin-key:active{background:var(--pr);color:#fff;transform:scale(.95)}
+.pin-key.fn{font-size:.9rem;font-weight:500}
+.pin-err{color:var(--er);font-size:.85rem;margin-top:14px;min-height:20px;font-weight:600}
 .setup{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center;animation:fi .6s}
 .setup h1{font-size:2.6rem;color:var(--pr);margin-bottom:4px}
 .setup .sub{color:var(--t2);font-size:1rem;margin-bottom:40px}
@@ -128,14 +140,36 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 .empty{text-align:center;padding:30px;color:var(--t3);font-size:.9rem}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--pr);color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;font-size:.9rem;z-index:300;animation:toastIn .3s ease;box-shadow:var(--sh2)}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-.loading{display:flex;justify-content:center;align-items:center;min-height:100vh;font-size:1.1rem;color:var(--t2)}
 @media(max-width:380px){.hero-amount{font-size:2.2rem}.cat-grid{grid-template-columns:repeat(4,1fr)}.quick-grid{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
 
-<div class="loading" id="loading">Cargando...</div>
+<!-- PIN -->
+<div class="pin-screen" id="pinScreen">
+<h1 class="dn">Mi Moneda</h1>
+<p class="sub">Ingresa tu código</p>
+<div class="pin-box">
+<div class="pin-dots" id="pinDots"><div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div><div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div></div>
+<div class="pin-pad">
+<div class="pin-key" onclick="pinKey(1)">1</div>
+<div class="pin-key" onclick="pinKey(2)">2</div>
+<div class="pin-key" onclick="pinKey(3)">3</div>
+<div class="pin-key" onclick="pinKey(4)">4</div>
+<div class="pin-key" onclick="pinKey(5)">5</div>
+<div class="pin-key" onclick="pinKey(6)">6</div>
+<div class="pin-key" onclick="pinKey(7)">7</div>
+<div class="pin-key" onclick="pinKey(8)">8</div>
+<div class="pin-key" onclick="pinKey(9)">9</div>
+<div class="pin-key fn" onclick="pinClear()">Borrar</div>
+<div class="pin-key" onclick="pinKey(0)">0</div>
+<div class="pin-key fn" onclick="pinDel()">←</div>
+</div>
+<div class="pin-err" id="pinErr"></div>
+</div>
+</div>
 
+<!-- SETUP -->
 <div class="setup hidden" id="setup">
 <h1 class="dn">Mi Moneda</h1>
 <p class="sub">Tu control financiero personal</p>
@@ -148,6 +182,7 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 </div>
 </div>
 
+<!-- APP -->
 <div class="app" id="app">
 <div class="hdr">
 <div class="hdr-top">
@@ -186,18 +221,17 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 <div class="bnav">
 <button class="bnav-btn on" onclick="goTab('dash',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
 <button class="bnav-btn" onclick="goTab('hist',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historial</button>
-<button class="bnav-add" onclick="openRegister()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1="5" y1="12" x2="19" y2="12"/></svg></button>
-<button class="bnav-btn" onclick="goTab('save',this)"><svg viewBox="0 0 24 24"5" x2="12" y2="19"/><line x fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/><polyline points="12 8 12 16"/><polyline points="8 12 16 12"/></svg>Ahorro</button>
+<button class="bnav-add" onclick="openRegister()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+<button class="bnav-btn" onclick="goTab('save',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/><polyline points="12 8 12 16"/><polyline points="8 12 16 12"/></svg>Ahorro</button>
 <button class="bnav-btn" onclick="goTab('set',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Ajustes</button>
 </div>
 </div>
 
-<!-- MODALS -->
 <div class="modal" id="mReg"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title">Registrar Gasto</div><button class="modal-close" onclick="closeModal('mReg')">&times;</button></div><input type="number" class="amount-input" id="regAmount" inputmode="decimal" placeholder="0.00" step="0.01"><div class="section-title">Categoría</div><div class="cat-grid" id="regCatGrid"></div><div id="regSubWrap" class="hidden"><div class="section-title">Subcategoría</div><div class="sub-grid" id="regSubGrid"></div></div><div id="regFreqWrap"><div class="section-title">Gastos frecuentes</div><div class="freq-list" id="regFreqList"></div></div><div class="toggle-row"><div class="toggle" id="regExtraToggle" onclick="toggleExtra()"></div><span>Gasto extraordinario</span></div><div style="margin-bottom:14px"><input type="text" id="regNote" placeholder="Nota (opcional)" style="width:100%;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"></div><div style="font-size:.8rem;color:var(--t2);margin-bottom:6px"><span id="regDateDisp"></span></div><div id="regErr" style="color:var(--er);text-align:center;margin-bottom:8px;font-size:.85rem;font-weight:600"></div><button class="btn btn-pr" onclick="saveExpense()">Guardar Gasto</button></div></div>
 
 <div class="modal" id="mBud"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title">Presupuesto</div><button class="modal-close" onclick="closeModal('mBud')">&times;</button></div><p style="font-size:.85rem;color:var(--t2);margin-bottom:12px" id="mBudPeriod"></p><input type="number" class="amount-input" id="mBudAmount" inputmode="decimal" placeholder="0.00" step="0.01"><div id="mBudHist"></div><div id="mBudErr" style="color:var(--er);text-align:center;margin-bottom:8px;font-size:.85rem"></div><button class="btn btn-pr" onclick="saveBudget()">Guardar Presupuesto</button></div></div>
 
-<div class="modal" id="mCBud"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title">Presupuesto por Categoría</div><button class="modal-close" onclick="closeModal('mCBud')">&times;</button></div><div id="mCBudContent"></div><div style="height:12px"></div><button class="btn btn-pr" onclick="saveCategoryBudgets()">Guardar</button></div></div>
+<div class="modal" id="mCBud"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title">Presupuesto por Categoría</div><button class="modal-close" onclick="closeModal('mCBud')">&times;</button></div><div id="mCBudContent"></div><div style="height:12px"></div><button class="btn btn-pr" onclick="saveCB()">Guardar</button></div></div>
 
 <div class="modal" id="mFix"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title">Gastos Fijos</div><button class="modal-close" onclick="closeModal('mFix')">&times;</button></div><div id="mFixList"></div><div style="height:16px;border-top:1px solid var(--bd);padding-top:16px;margin-top:8px"><div class="section-title">Agregar gasto fijo</div><input type="text" id="fixName" placeholder="Nombre" style="width:100%;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;margin-bottom:8px;font-family:'DM Sans',sans-serif;outline:none"><div style="display:flex;gap:8px;margin-bottom:8px"><input type="number" id="fixAmount" inputmode="decimal" placeholder="Monto" step="0.01" style="flex:1;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"><select id="fixFreq" style="flex:1;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"><option value="mensual">Mensual</option><option value="quincenal">Quincenal</option><option value="semanal">Semanal</option></select></div><div style="display:flex;gap:8px;margin-bottom:8px"><input type="number" id="fixDue" placeholder="Día de pago" min="1" max="31" style="flex:1;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"><select id="fixCat" style="flex:1;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"></select></div><button class="btn btn-sm btn-ac" onclick="addFixed()">Agregar</button></div></div></div>
 
@@ -205,6 +239,7 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 
 <script>
 var GAS_URL='https://script.google.com/macros/s/AKfycbwjcW7K3RbWXWn9-712BbiVw_ogK19ivQUExh_tCvbRB-rUMXbfVgLeuX4OO2toiqo/exec';
+var PIN='7512';
 var CATS=[
 {id:'vivienda',name:'Vivienda',icon:'🏠',subs:[]},
 {id:'alimentacion',name:'Alimentación',icon:'🍽️',subs:[{id:'carnes',name:'Carnes',icon:'🥩'},{id:'pescado',name:'Pescado',icon:'🐟'},{id:'huevos',name:'Huevos',icon:'🥚'},{id:'arroz',name:'Arroz',icon:'🍚'},{id:'frijoles',name:'Frijoles',icon:'🫘'},{id:'verduras',name:'Verduras',icon:'🥬'},{id:'frutas',name:'Frutas',icon:'🍎'},{id:'bebidas',name:'Bebidas',icon:'🥤'},{id:'postres',name:'Postres',icon:'🍰'},{id:'otros',name:'Otros',icon:'➕'}]},
@@ -219,19 +254,31 @@ var CATS=[
 {id:'otros',name:'Otros',icon:'➕',subs:[]}
 ];
 
-var D=null;var regCat='';var regSub='';var regExtra=false;var histFilter='mes';
+var D=null;var regCat='';var regSub='';var regExtra=false;var histFilter='mes';var pinCode='';
 function initD(){return{periods:{},expenses:[],frequent:[],fixed:[],categoryBudgets:{}}}
 
-async function loadData(){
+// PIN
+function pinKey(n){if(pinCode.length>=4)return;pinCode+=n;updatePinDots();if(pinCode.length===4)checkPin()}
+function pinDel(){pinCode=pinCode.slice(0,-1);updatePinDots();document.getElementById('pinErr').textContent=''}
+function pinClear(){pinCode='';updatePinDots();document.getElementById('pinErr').textContent=''}
+function updatePinDots(){for(var i=0;i<4;i++){document.getElementById('pd'+i).className='pin-dot'+(i<pinCode.length?' filled':'')}}
+function checkPin(){if(pinCode===PIN){document.getElementById('pinScreen').classList.add('hidden');startApp()}else{document.getElementById('pinErr').textContent='Código incorrecto';pinCode='';setTimeout(updatePinDots,300)}}
+
+async function startApp(){
+  D=initD();
   try{var resp=await fetch(GAS_URL+'?action=getData');var data=await resp.json();
-    if(data.ok){D={periods:{},expenses:[],frequent:[],fixed:[],categoryBudgets:{}};
+    if(data.ok){
       (data.presupuestos||[]).forEach(function(p){D.periods[p.periodKey]={budget:p.presupuesto,startDate:p.fechaInicio,endDate:p.fechaFin,history:p.historial||[]};if(p.categoryBudgets)D.categoryBudgets[p.periodKey]=p.categoryBudgets});
       (data.gastos||[]).forEach(function(g){D.expenses.push({id:g.id,timestamp:g.timestamp,date:g.fecha,time:g.hora,amount:g.monto,category:g.categoria,subcategory:g.subcategoria,note:g.nota,extra:g.extraordinario,periodKey:g.periodKey})});
       (data.fijos||[]).forEach(function(f){D.fixed.push({id:f.id,name:f.nombre,amount:f.monto,frequency:f.frecuencia,dueDay:f.diaPago,category:f.categoria})});
       (data.frecuentes||[]).forEach(function(f){D.frequent.push({id:f.id,name:f.nombre,category:f.categoria,subcategory:f.subcategoria})});
     }
-  }catch(e){console.error(e);if(!D)D=initD()}
+  }catch(e){console.error(e)}
+  var k=pk();
+  if(!D.periods[k]){document.getElementById('setup').classList.remove('hidden');document.getElementById('setupPeriod').textContent=periodLabel(k)+' ('+todayStr().split('-').reverse().join('/')+' — '+pDates(k).endDate.split('-').reverse().join('/')+')'}
+  else{document.getElementById('app').style.display='block';renderAll()}
 }
+
 async function postGAS(d){try{await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d)})}catch(e){console.error(e)}}
 
 function pk(){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')}
@@ -268,14 +315,6 @@ function getWeekSavings(){
 
 function getCatSummary(){var k=pk(),exp=D.expenses.filter(function(e){return e.periodKey===k});var cats={};exp.forEach(function(e){if(!cats[e.category])cats[e.category]={spent:0,count:0};cats[e.category].spent+=e.amount;cats[e.category].count++});return cats}
 
-async function checkSetup(){
-  document.getElementById('loading').classList.remove('hidden');document.getElementById('setup').classList.add('hidden');document.getElementById('app').style.display='none';
-  D=initD();await loadData();
-  document.getElementById('loading').classList.add('hidden');
-  var k=pk();if(!D.periods[k]){document.getElementById('setup').classList.remove('hidden');document.getElementById('setupPeriod').textContent=periodLabel(k)+' ('+todayStr().split('-').reverse().join('/')+' — '+pDates(k).endDate.split('-').reverse().join('/')+')'}
-  else{document.getElementById('app').style.display='block';renderAll()}
-}
-
 async function confirmSetup(){
   var v=parseFloat(document.getElementById('setupBudget').value);if(!v||v<=0)return;
   var k=pk();var ed=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'+String(lastDay(new Date().getFullYear(),new Date().getMonth()+1)).padStart(2,'0');
@@ -287,7 +326,7 @@ async function confirmSetup(){
 function goTab(t,btn){document.querySelectorAll('.tab').forEach(function(el){el.classList.remove('on')});document.querySelectorAll('.bnav-btn').forEach(function(el){el.classList.remove('on')});document.getElementById({dash:'tabDash',hist:'tabHist',save:'tabSave',set:'tabSet'}[t]).classList.add('on');if(btn)btn.classList.add('on');if(t==='dash')renderDash();if(t==='hist')renderHist();if(t==='save')renderSave();if(t==='set')renderSet()}
 function openModal(id){document.getElementById(id).classList.add('on')}
 function closeModal(id){document.getElementById(id).classList.remove('on')}
-function renderAll(){document.getElementById('hdrPeriod').textContent=periodLabel(pk());renderDash();renderHistSetup()}
+function renderAll(){document.getElementById('hdrPeriod').textContent=periodLabel(pk());renderDash()}
 
 function renderDash(){
   var s=getSummary();var pctBar=Math.min(s.pct,100);var barColor=s.status==='err'?'#EF5350':s.status==='warn'?'#FFB74D':'#81C784';
@@ -388,8 +427,6 @@ async function rmFreq(id){D.frequent=D.frequent.filter(function(f){return f.id!=
 function showOld(){var keys=Object.keys(D.periods).sort().reverse();var h='';keys.forEach(function(k){var p=D.periods[k];var spent=D.expenses.filter(function(e){return e.periodKey===k}).reduce(function(s,e){return s+e.amount},0);h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700">'+periodLabel(k)+'</div><div style="font-size:.8rem;color:var(--t2)">'+p.startDate.split('-').reverse().join('/')+' — '+p.endDate.split('-').reverse().join('/')+'</div></div><div style="text-align:right"><div class="dn" style="font-size:1.2rem;font-weight:700">'+fmtMoney(p.budget-spent)+'</div><div style="font-size:.75rem;color:var(--t2)">de '+fmtMoney(p.budget)+'</div></div></div></div>'});if(!keys.length)h='<div class="empty">Sin períodos</div>';document.getElementById('setContent').innerHTML='<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><button onclick="renderSet()" style="background:none;border:none;font-size:1.2rem;cursor:pointer">←</button><div style="font-weight:700;font-size:1.1rem">Períodos Anteriores</div></div>'+h}
 
 function toast(msg){var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(function(){t.remove()},300)},2000)}
-
-document.addEventListener('DOMContentLoaded',function(){checkSetup()});
 </script>
 </body>
 </html>
