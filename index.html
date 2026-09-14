@@ -304,7 +304,7 @@ function getSummary(){
   var normal=exp.filter(function(e){return!e.extra}).reduce(function(s,e){return s+e.amount},0);
   var extra=exp.filter(function(e){return e.extra}).reduce(function(s,e){return s+e.amount},0);
   var rem=p.budget-spent;var dl=Math.max(daysBetween(todayStr(),p.endDate),0);
-  var totalDays=daysBetween(p.startDate,p.endDate)+1;var dailyRef=dl>0?rem/dl:0;var spentToday=exp.filter(function(e){return e.date===todayStr()}).reduce(function(s,e){return s+e.amount},0);var daily=dailyRef-spentToday;
+  var totalDays=daysBetween(p.startDate,p.endDate)+1;var dailyRef=dl>0?rem/dl:0;var now=new Date();var todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();var spentToday=exp.filter(function(e){return e.timestamp>=todayStart}).reduce(function(s,e){return s+e.amount},0);var daily=dailyRef-spentToday;
   var pct=p.budget>0?spent/p.budget*100:0;var status=pct>=100?'err':pct>=75?'warn':'ok';
   return{budget:p.budget,spent:spent,remaining:rem,daily:daily,pct:pct,status:status,normal:normal,extra:extra,daysLeft:dl,totalDays:totalDays,weeklyRef:totalDays>0?p.budget/(totalDays/7):0,expenses:exp}
 }
