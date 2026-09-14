@@ -1,4 +1,4 @@
-var CACHE_NAME='mi-moneda-v8';
+var CACHE_NAME='mi-moneda-v9';
 var urls=['./','manifest.json'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE_NAME).then(function(c){return c.addAll(urls)}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(n){return Promise.all(n.filter(function(k){return k!==CACHE_NAME}).map(function(k){return caches.delete(k)}))}))});
