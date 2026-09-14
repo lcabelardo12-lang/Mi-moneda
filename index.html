@@ -259,13 +259,11 @@ function pk7(n){if(pinCode.length>=4)return;pinCode+=n;updPD();if(pinCode.length
 function pinDel(){pinCode=pinCode.slice(0,-1);updPD();document.getElementById('pinErr').textContent=''}
 function pinClear(){pinCode='';updPD();document.getElementById('pinErr').textContent=''}
 function updPD(){for(var i=0;i<4;i++)document.getElementById('pd'+i).className='pin-dot'+(i<pinCode.length?' filled':'')}
-function checkPin(){if(pinCode===PIN){var now=Date.now();try{localStorage.setItem('mm_pin',now.toString())}catch(e){};goToLoad()}else{document.getElementById('pinErr').textContent='Código incorrecto';pinCode='';setTimeout(updPD,300)}}
+function checkPin(){if(pinCode===PIN){goToLoad()}else{document.getElementById('pinErr').textContent='Código incorrecto';pinCode='';setTimeout(updPD,300)}}
 
 // BOOT
 document.addEventListener('DOMContentLoaded',function(){
-  var lastPin=0;try{lastPin=parseInt(localStorage.getItem('mm_pin'))||0}catch(e){}
-  if(lastPin&&(Date.now()-lastPin)<30*60*1000){goToLoad()}
-  else{document.getElementById('pinScreen').classList.remove('hidden')}
+  document.getElementById('pinScreen').classList.remove('hidden')
 });
 
 function goToLoad(){document.getElementById('pinScreen').classList.add('hidden');startApp()}
@@ -306,7 +304,7 @@ function getSummary(){
   var normal=exp.filter(function(e){return!e.extra}).reduce(function(s,e){return s+e.amount},0);
   var extra=exp.filter(function(e){return e.extra}).reduce(function(s,e){return s+e.amount},0);
   var rem=p.budget-spent;var dl=Math.max(daysBetween(todayStr(),p.endDate),0);
-  var totalDays=daysBetween(p.startDate,p.endDate)+1;var daily=dl>0?rem/dl:0;
+  var totalDays=daysBetween(p.startDate,p.endDate)+1;var dailyRef=dl>0?rem/dl:0;var spentToday=exp.filter(function(e){return e.date===todayStr()}).reduce(function(s,e){return s+e.amount},0);var daily=dailyRef-spentToday;
   var pct=p.budget>0?spent/p.budget*100:0;var status=pct>=100?'err':pct>=75?'warn':'ok';
   return{budget:p.budget,spent:spent,remaining:rem,daily:daily,pct:pct,status:status,normal:normal,extra:extra,daysLeft:dl,totalDays:totalDays,weeklyRef:totalDays>0?p.budget/(totalDays/7):0,expenses:exp}
 }
@@ -341,7 +339,7 @@ function renderAll(){document.getElementById('hdrPeriod').textContent=periodLabe
 function renderDash(){
   var s=getSummary();var pctBar=Math.min(s.pct,100);var barColor=s.status==='err'?'#EF5350':s.status==='warn'?'#FFB74D':'#81C784';
   document.getElementById('heroCard').innerHTML='<div class="hero-label">Disponible</div><div class="hero-amount dn">'+fmtMoney(s.remaining)+'</div><div class="hero-bar"><div class="hero-bar-fill" style="width:'+pctBar+'%;background:'+barColor+'"></div></div><div class="hero-pct">'+s.pct.toFixed(1)+'% gastado de '+fmtMoney(s.budget)+'</div>';
-  document.getElementById('statsRow').innerHTML='<div class="stat"><div class="stat-val">'+fmtMoney(s.spent)+'</div><div class="stat-lbl">Gastado</div></div><div class="stat"><div class="stat-val">'+fmtMoney(s.daily)+'</div><div class="stat-lbl">Puedes hoy</div></div><div class="stat"><div class="stat-val dn">'+fmtMoney(s.remaining)+'</div><div class="stat-lbl">Ahorro</div></div>';
+  document.getElementById('statsRow').innerHTML='<div class="stat"><div class="stat-val">'+fmtMoney(s.spent)+'</div><div class="stat-lbl">Gastado</div></div><div class="stat"><div class="stat-val">'+fmtMoney(s.daily)+'</div><div class="stat-lbl">Puedes hoy</div></div><div class="stat"><div class="stat-val dn">'+fmtMoney(s.remaining)+'</div><div class="stat-lbl">Días rest.</div></div>';
   var st=s.status==='err'?'status-err':s.status==='warn'?'status-warn':'status-ok';var stxt=s.status==='err'?'🔴 Presupuesto excedido':s.status==='warn'?'🟡 Atención':'🟢 Vas bien';
   document.getElementById('statusBar').innerHTML='<div class="'+st+'">'+stxt+'</div>';
   var aliCat=CATS.find(function(c){return c.id==='alimentacion'});var qg='';
