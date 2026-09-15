@@ -103,6 +103,11 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 .sub-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .sub-btn{padding:8px 14px;background:var(--bg);border:2px solid transparent;border-radius:20px;cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s}
 .sub-btn.sel{border-color:var(--ac);background:var(--wn-bg);color:var(--ac)}
+.sub-btn.sub-custom{border:2px dashed var(--ac);color:var(--ac);background:var(--wn-bg)}
+.sub-btn.sub-custom.sel{background:var(--ac);color:#fff;border-style:solid}
+.custom-wrap{margin-bottom:14px;animation:fi .3s}
+.custom-wrap input{width:100%;padding:14px;border:2px solid var(--ac);border-radius:12px;font-size:1rem;font-family:'DM Sans',sans-serif;outline:none;background:var(--wn-bg);color:var(--tx)}
+.custom-wrap input::placeholder{color:var(--t3)}
 .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:.9rem}
 .toggle{width:44px;height:24px;background:var(--bd);border-radius:12px;position:relative;cursor:pointer;transition:background .2s}
 .toggle.on{background:var(--ok)}
@@ -221,7 +226,7 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 </div>
 
 <!-- MODALS -->
-<div class="modal" id="mReg"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title" id="regTitle">Registrar Gasto</div><button class="modal-close" onclick="closeModal('mReg')">&times;</button></div><input type="number" class="amount-input" id="regAmount" inputmode="decimal" placeholder="0.00" step="0.01"><div class="section-title">Categoría</div><div class="cat-grid" id="regCatGrid"></div><div id="regSubWrap" class="hidden"><div class="section-title">Subcategoría</div><div class="sub-grid" id="regSubGrid"></div></div><div id="regFreqWrap"><div class="section-title">Gastos frecuentes</div><div class="freq-list" id="regFreqList"></div></div><div class="toggle-row"><div class="toggle" id="regExtraToggle" onclick="toggleExtra()"></div><span>Gasto extraordinario</span></div><div style="margin-bottom:14px"><input type="text" id="regNote" placeholder="Nota (opcional)" style="width:100%;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"></div><div style="font-size:.8rem;color:var(--t2);margin-bottom:6px"><span id="regDateDisp"></span></div><div id="regErr" style="color:var(--er);text-align:center;margin-bottom:8px;font-size:.85rem;font-weight:600"></div><button class="btn btn-pr" id="regSaveBtn" onclick="saveExpense()">Guardar Gasto</button></div></div>
+<div class="modal" id="mReg"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title" id="regTitle">Registrar Gasto</div><button class="modal-close" onclick="closeModal('mReg')">&times;</button></div><input type="number" class="amount-input" id="regAmount" inputmode="decimal" placeholder="0.00" step="0.01"><div class="section-title">Categoría</div><div class="cat-grid" id="regCatGrid"></div><div id="regSubWrap" class="hidden"><div class="section-title">Subcategoría</div><div class="sub-grid" id="regSubGrid"></div></div><div id="regCustomWrap" class="hidden custom-wrap"><div class="section-title">Escribe el nombre</div><input type="text" id="regCustom" placeholder="Ej: Cordero, Aceite de coco..." maxlength="30"></div><div id="regFreqWrap"><div class="section-title">Gastos frecuentes</div><div class="freq-list" id="regFreqList"></div></div><div class="toggle-row"><div class="toggle" id="regExtraToggle" onclick="toggleExtra()"></div><span>Gasto extraordinario</span></div><div style="margin-bottom:14px"><input type="text" id="regNote" placeholder="Nota (opcional)" style="width:100%;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"></div><div style="font-size:.8rem;color:var(--t2);margin-bottom:6px"><span id="regDateDisp"></span></div><div id="regErr" style="color:var(--er);text-align:center;margin-bottom:8px;font-size:.85rem;font-weight:600"></div><button class="btn btn-pr" id="regSaveBtn" onclick="saveExpense()">Guardar Gasto</button></div></div>
 
 <div class="modal" id="mAction"><div class="modal-sheet" style="padding:12px 20px 24px"><div class="modal-hdr"><div class="modal-title" id="actionTitle">Acción</div><button class="modal-close" onclick="closeModal('mAction')">&times;</button></div><button class="btn btn-ghost" style="margin-bottom:8px" onclick="editExpense()">✏️ Editar</button><button class="btn btn-er" style="margin-bottom:8px" onclick="confirmDelete()">🗑️ Eliminar</button><button class="btn btn-sm" style="background:var(--bg);color:var(--t2);margin:0 auto;width:auto" onclick="closeModal('mAction')">Cancelar</button></div></div>
 
@@ -237,17 +242,99 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 var GAS_URL='https://script.google.com/macros/s/AKfycbwjcW7K3RbWXWn9-712BbiVw_ogK19ivQUExh_tCvbRB-rUMXbfVgLeuX4OO2toiqo/exec';
 var PIN='7512';
 var CATS=[
-{id:'vivienda',name:'Vivienda',icon:'🏠',subs:[]},
-{id:'alimentacion',name:'Alimentación',icon:'🍽️',subs:[{id:'carnes',name:'Carnes',icon:'🥩'},{id:'pescado',name:'Pescado',icon:'🐟'},{id:'huevos',name:'Huevos',icon:'🥚'},{id:'arroz',name:'Arroz',icon:'🍚'},{id:'frijoles',name:'Frijoles',icon:'🫘'},{id:'verduras',name:'Verduras',icon:'🥬'},{id:'frutas',name:'Frutas',icon:'🍎'},{id:'bebidas',name:'Bebidas',icon:'🥤'},{id:'postres',name:'Postres',icon:'🍰'},{id:'otros',name:'Otros',icon:'➕'}]},
-{id:'transporte',name:'Transporte',icon:'🚕',subs:[]},
-{id:'salud',name:'Salud',icon:'💊',subs:[]},
-{id:'comunicacion',name:'Comunicación',icon:'📱',subs:[]},
-{id:'higiene',name:'Higiene',icon:'🧴',subs:[]},
-{id:'ropa',name:'Ropa',icon:'👕',subs:[]},
-{id:'entretenimiento',name:'Entretenimiento',icon:'🎭',subs:[{id:'cafe',name:'Café',icon:'☕'},{id:'restaurante',name:'Restaurante',icon:'🍽️'},{id:'cine',name:'Cine/Teatro',icon:'🎬'},{id:'salida',name:'Salida',icon:'🎉'},{id:'juegos',name:'Juegos',icon:'🎮'},{id:'otros',name:'Otros',icon:'➕'}]},
-{id:'donaciones',name:'Donaciones',icon:'🙏',subs:[]},
-{id:'emergencias',name:'Emergencias',icon:'⚠️',subs:[]},
-{id:'otros',name:'Otros',icon:'➕',subs:[]}
+{id:'vivienda',name:'Vivienda',icon:'🏠',subs:[
+{id:'alquiler',name:'Alquiler',icon:'🏠'},
+{id:'electricidad',name:'Electricidad',icon:'⚡'},
+{id:'agua',name:'Agua',icon:'💧'},
+{id:'gas',name:'Gas',icon:'🔥'},
+{id:'internet',name:'Internet/WiFi',icon:'📡'},
+{id:'mantenimiento',name:'Mantenimiento',icon:'🔧'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'alimentacion',name:'Alimentación',icon:'🍽️',subs:[
+{id:'carnes',name:'Carnes',icon:'🥩'},
+{id:'pescado',name:'Pescado',icon:'🐟'},
+{id:'huevos',name:'Huevos',icon:'🥚'},
+{id:'arroz',name:'Arroz',icon:'🍚'},
+{id:'frijoles',name:'Frijoles',icon:'🫘'},
+{id:'verduras',name:'Verduras',icon:'🥬'},
+{id:'frutas',name:'Frutas',icon:'🍎'},
+{id:'bebidas',name:'Bebidas',icon:'🥤'},
+{id:'postres',name:'Postres',icon:'🍰'},
+{id:'cafe',name:'Café',icon:'☕'},
+{id:'aceite',name:'Aceite',icon:'🫒'},
+{id:'pastas',name:'Pastas',icon:'🍝'},
+{id:'panaderia',name:'Panadería',icon:'🍞'},
+{id:'lacteos',name:'Lácteos',icon:'🥛'},
+{id:'especias',name:'Especias',icon:'🌶️'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'transporte',name:'Transporte',icon:'🚕',subs:[
+{id:'yango',name:'Yango/Uber',icon:'🚕'},
+{id:'micro',name:'Micro',icon:'🚌'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'salud',name:'Salud',icon:'💊',subs:[
+{id:'medicamentos',name:'Medicamentos',icon:'💊'},
+{id:'consulta',name:'Consulta médica',icon:'🩺'},
+{id:'examenes',name:'Exámenes',icon:'🔬'},
+{id:'dentista',name:'Dentista',icon:'🦷'},
+{id:'optica',name:'Óptica',icon:'👓'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'deporte',name:'Deporte',icon:'🏋️',subs:[
+{id:'gimnasio',name:'Gimnasio',icon:'🏋️'},
+{id:'equipamiento',name:'Equipamiento',icon:'🎽'},
+{id:'suplementos',name:'Suplementos',icon:'💊'},
+{id:'clases',name:'Clases',icon:'🧘'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'comunicacion',name:'Comunicación',icon:'📱',subs:[
+{id:'planmovil',name:'Plan móvil',icon:'📱'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'higiene',name:'Higiene',icon:'🧴',subs:[
+{id:'jabon',name:'Jabón',icon:'🧼'},
+{id:'shampoo',name:'Champú',icon:'🧴'},
+{id:'pasta_dental',name:'Pasta dental',icon:'🪥'},
+{id:'desodorante',name:'Desodorante',icon:'💨'},
+{id:'papel',name:'Papel higiénico',icon:'🧻'},
+{id:'cuidado_cabello',name:'Cuidado cabello',icon:'💇'},
+{id:'corte',name:'Corte/Barba',icon:'✂️'},
+{id:'perfume',name:'Perfume',icon:'🌸'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'ropa',name:'Ropa',icon:'👕',subs:[
+{id:'poleras',name:'Poleras',icon:'👕'},
+{id:'camisas',name:'Camisas',icon:'👔'},
+{id:'pantalon',name:'Pantalón',icon:'👖'},
+{id:'ropa_interior',name:'Ropa interior',icon:'🩲'},
+{id:'medias',name:'Medias',icon:'🧦'},
+{id:'zapatos',name:'Zapatos',icon:'👟'},
+{id:'accesorios',name:'Accesorios',icon:'🎒'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'entretenimiento',name:'Entretenimiento',icon:'🎭',subs:[
+{id:'cafe_ent',name:'Café',icon:'☕'},
+{id:'restaurante',name:'Restaurante',icon:'🍽️'},
+{id:'cine',name:'Cine/Teatro',icon:'🎬'},
+{id:'encuentro',name:'Encuentro con amigos',icon:'👥'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'donaciones',name:'Donaciones',icon:'🙏',subs:[
+{id:'iglesia',name:'Iglesia',icon:'⛪'},
+{id:'familia',name:'Ayuda familiar',icon:'👨‍👩‍👧'},
+{id:'caridad',name:'Caridad',icon:'🤝'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'emergencias',name:'Emergencias',icon:'⚠️',subs:[
+{id:'reparacion',name:'Reparación urgente',icon:'🔧'},
+{id:'medicina_urg',name:'Medicina urgente',icon:'🚑'},
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]},
+{id:'otros',name:'Otros',icon:'➕',subs:[
+{id:'_custom',name:'Escribir...',icon:'✏️'}
+]}
 ];
 
 var D=null;var regCat='';var regSub='';var regExtra=false;var histFilter='mes';var pinCode='';
@@ -304,7 +391,10 @@ function getSummary(){
   var normal=exp.filter(function(e){return!e.extra}).reduce(function(s,e){return s+e.amount},0);
   var extra=exp.filter(function(e){return e.extra}).reduce(function(s,e){return s+e.amount},0);
   var rem=p.budget-spent;var dl=Math.max(daysBetween(todayStr(),p.endDate),0);
-  var totalDays=daysBetween(p.startDate,p.endDate)+1;var dailyRef=dl>0?rem/dl:0;var now=new Date();var todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();var spentToday=exp.filter(function(e){return e.timestamp>=todayStart}).reduce(function(s,e){return s+e.amount},0);var daily=dailyRef-spentToday;
+  var totalDays=daysBetween(p.startDate,p.endDate)+1;var dailyRef=dl>0?rem/dl:0;
+  var now=new Date();var todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  var spentToday=exp.filter(function(e){return e.timestamp>=todayStart}).reduce(function(s,e){return s+e.amount},0);
+  var daily=dailyRef-spentToday;
   var pct=p.budget>0?spent/p.budget*100:0;var status=pct>=100?'err':pct>=75?'warn':'ok';
   return{budget:p.budget,spent:spent,remaining:rem,daily:daily,pct:pct,status:status,normal:normal,extra:extra,daysLeft:dl,totalDays:totalDays,weeklyRef:totalDays>0?p.budget/(totalDays/7):0,expenses:exp}
 }
@@ -322,6 +412,18 @@ function getWeekSavings(){
 }
 
 function getCatSummary(){var k=pk(),exp=D.expenses.filter(function(e){return e.periodKey===k});var cats={};exp.forEach(function(e){if(!cats[e.category])cats[e.category]={spent:0,count:0};cats[e.category].spent+=e.amount;cats[e.category].count++});return cats}
+
+function findSubById(catId,subId){
+  var cat=CATS.find(function(c){return c.id===catId});
+  if(!cat)return null;
+  return cat.subs.find(function(s){return s.id===subId&&s.id!=='_custom'})||null;
+}
+
+function subDisplayName(catId,subValue){
+  if(!subValue)return'';
+  var sub=findSubById(catId,subValue);
+  return sub?sub.name:subValue;
+}
 
 async function confirmSetup(){
   var v=parseFloat(document.getElementById('setupBudget').value);if(!v||v<=0)return;
@@ -343,7 +445,7 @@ function renderDash(){
   var st=s.status==='err'?'status-err':s.status==='warn'?'status-warn':'status-ok';var stxt=s.status==='err'?'🔴 Presupuesto excedido':s.status==='warn'?'🟡 Atención':'🟢 Vas bien';
   document.getElementById('statusBar').innerHTML='<div class="'+st+'">'+stxt+'</div>';
   var aliCat=CATS.find(function(c){return c.id==='alimentacion'});var qg='';
-  if(aliCat)aliCat.subs.forEach(function(sub){qg+='<div class="quick-btn" onclick="quickExpense(\''+aliCat.id+'\',\''+sub.id+'\')"><span class="qi">'+sub.icon+'</span>'+sub.name+'</div>'});
+  if(aliCat)aliCat.subs.filter(function(s){return s.id!=='_custom'}).forEach(function(sub){qg+='<div class="quick-btn" onclick="quickExpense(\''+aliCat.id+'\',\''+sub.id+'\')"><span class="qi">'+sub.icon+'</span>'+sub.name+'</div>'});
   document.getElementById('quickGrid').innerHTML=qg;
   renderRecent('recentList',5);
 }
@@ -358,16 +460,21 @@ function renderRecent(targetId,max){
 }
 
 function expItemHTML(e){
-  var cat=CATS.find(function(c){return c.id===e.category});var sub=cat?cat.subs.find(function(s){return s.id===e.subcategory}):null;
-  var icon=cat?cat.icon:'📌';var name=sub?sub.name:(cat?cat.name:'');
+  var cat=CATS.find(function(c){return c.id===e.category});
+  var sub=findSubById(e.category,e.subcategory);
+  var icon=sub?sub.icon:(cat?cat.icon:'📌');
+  var name=sub?sub.name:subDisplayName(e.category,e.subcategory);
+  if(!name)name=cat?cat.name:'Gasto';
+  var isCustom=e.subcategory&&!sub;
   var time=new Date(e.timestamp);
-  return'<div class="expense-item"><div class="exp-left"><span class="exp-icon">'+icon+'</span><div class="exp-info"><div class="exp-name">'+name+'</div><div class="exp-detail">'+fmtDate(e.date)+' '+String(time.getHours()).padStart(2,'0')+':'+String(time.getMinutes()).padStart(2,'0')+(e.extra?' · ⚠️':'')+(e.note?' · '+e.note:'')+'</div></div></div><div class="exp-right"><div class="exp-amount'+(e.extra?' extra':'')+'">'+fmtMoney(e.amount)+'</div><button class="exp-menu" onclick="event.stopPropagation();openAction(\''+e.id+'\')">⋮</button></div></div>';
+  var nameHtml=isCustom?'<span style="color:var(--ac);font-weight:700">'+name+'</span>':name;
+  return'<div class="expense-item"><div class="exp-left"><span class="exp-icon">'+icon+'</span><div class="exp-info"><div class="exp-name">'+nameHtml+'</div><div class="exp-detail">'+fmtDate(e.date)+' '+String(time.getHours()).padStart(2,'0')+':'+String(time.getMinutes()).padStart(2,'0')+(e.extra?' · ⚠️':'')+(e.note?' · '+e.note:'')+'</div></div></div><div class="exp-right"><div class="exp-amount'+(e.extra?' extra':'')+'">'+fmtMoney(e.amount)+'</div><button class="exp-menu" onclick="event.stopPropagation();openAction(\''+e.id+'\')">⋮</button></div></div>';
 }
 
-// ACTION SHEET (edit/delete)
 function openAction(id){actionExpId=id;var e=D.expenses.find(function(x){return x.id===id});if(!e)return;
-  var cat=CATS.find(function(c){return c.id===e.category});var sub=cat?cat.subs.find(function(s){return s.id===e.subcategory}):null;
-  document.getElementById('actionTitle').textContent=(sub?sub.name:(cat?cat.name:''))+' — '+fmtMoney(e.amount);
+  var displayName=subDisplayName(e.category,e.subcategory);
+  if(!displayName){var cat=CATS.find(function(c){return c.id===e.category});displayName=cat?cat.name:'Gasto';}
+  document.getElementById('actionTitle').textContent=displayName+' — '+fmtMoney(e.amount);
   openModal('mAction')}
 
 function editExpense(){
@@ -376,7 +483,12 @@ function editExpense(){
   document.getElementById('regAmount').value=e.amount;
   document.getElementById('regNote').value=e.note||'';
   if(e.extra){regExtra=true;document.getElementById('regExtraToggle').classList.add('on')}
-  selectCat(e.category);if(e.subcategory)setTimeout(function(){selectSub(e.subcategory)},100);
+  selectCat(e.category);
+  if(e.subcategory){
+    var knownSub=findSubById(e.category,e.subcategory);
+    if(knownSub){setTimeout(function(){selectSub(e.subcategory)},100)}
+    else{setTimeout(function(){selectSub('_custom');document.getElementById('regCustom').value=e.subcategory},100)}
+  }
   document.getElementById('regTitle').textContent='Editar Gasto';
   document.getElementById('regSaveBtn').textContent='Actualizar';
 }
@@ -395,6 +507,7 @@ function quickExpense(catId,subId){regCat=catId;regSub=subId;regExtra=false;open
 function openRegister(){
   if(!editingId){regCat='';regSub='';regExtra=false}
   document.getElementById('regAmount').value='';document.getElementById('regNote').value='';document.getElementById('regErr').textContent='';
+  document.getElementById('regCustom').value='';document.getElementById('regCustomWrap').classList.add('hidden');
   document.getElementById('regExtraToggle').classList.remove('on');document.getElementById('regSubWrap').classList.add('hidden');
   if(!editingId){document.getElementById('regTitle').textContent='Registrar Gasto';document.getElementById('regSaveBtn').textContent='Guardar Gasto'}
   document.getElementById('regDateDisp').textContent='📅 '+new Date().toLocaleDateString('es-ES')+' '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
@@ -402,21 +515,52 @@ function openRegister(){
   var fl='';D.frequent.forEach(function(f){fl+='<div class="freq-chip" onclick="useFrequent(\''+f.id+'\')">'+f.name+'</div>'});if(!D.frequent.length)fl='<div style="font-size:.8rem;color:var(--t3)">Sin frecuentes</div>';document.getElementById('regFreqList').innerHTML=fl;
   openModal('mReg');setTimeout(function(){document.getElementById('regAmount').focus()},300)
 }
-function selectCat(id){regCat=id;if(!editingId)regSub='';document.querySelectorAll('#regCatGrid .cat-btn').forEach(function(b){b.classList.remove('sel')});var el=document.getElementById('rc-'+id);if(el)el.classList.add('sel');var cat=CATS.find(function(c){return c.id===id});if(cat&&cat.subs.length){document.getElementById('regSubWrap').classList.remove('hidden');var sg='';cat.subs.forEach(function(s){sg+='<div class="sub-btn" id="rs-'+s.id+'" onclick="selectSub(\''+s.id+'\')">'+s.icon+' '+s.name+'</div>'});document.getElementById('regSubGrid').innerHTML=sg;if(regSub)setTimeout(function(){selectSub(regSub)},50)}else document.getElementById('regSubWrap').classList.add('hidden')}
-function selectSub(id){regSub=id;document.querySelectorAll('#regSubGrid .sub-btn').forEach(function(b){b.classList.remove('sel')});var el=document.getElementById('rs-'+id);if(el)el.classList.add('sel')}
+
+function selectCat(id){
+  regCat=id;if(!editingId)regSub='';
+  document.querySelectorAll('#regCatGrid .cat-btn').forEach(function(b){b.classList.remove('sel')});
+  var el=document.getElementById('rc-'+id);if(el)el.classList.add('sel');
+  var cat=CATS.find(function(c){return c.id===id});
+  document.getElementById('regCustomWrap').classList.add('hidden');document.getElementById('regCustom').value='';
+  if(cat&&cat.subs.length){
+    document.getElementById('regSubWrap').classList.remove('hidden');
+    var sg='';
+    cat.subs.forEach(function(s){
+      var isC=s.id==='_custom';
+      sg+='<div class="sub-btn'+(isC?' sub-custom':'')+'" id="rs-'+s.id+'" onclick="selectSub(\''+s.id+'\')">'+s.icon+' '+s.name+'</div>';
+    });
+    document.getElementById('regSubGrid').innerHTML=sg;
+    if(regSub)setTimeout(function(){selectSub(regSub)},50);
+  }else{document.getElementById('regSubWrap').classList.add('hidden')}
+}
+
+function selectSub(id){
+  regSub=id;
+  document.querySelectorAll('#regSubGrid .sub-btn').forEach(function(b){b.classList.remove('sel')});
+  var el=document.getElementById('rs-'+id);if(el)el.classList.add('sel');
+  if(id==='_custom'){document.getElementById('regCustomWrap').classList.remove('hidden');setTimeout(function(){document.getElementById('regCustom').focus()},100)}
+  else{document.getElementById('regCustomWrap').classList.add('hidden');document.getElementById('regCustom').value=''}
+}
+
 function toggleExtra(){regExtra=!regExtra;document.getElementById('regExtraToggle').classList.toggle('on',regExtra)}
 function useFrequent(id){var f=D.frequent.find(function(x){return x.id===id});if(!f)return;regCat=f.category;regSub=f.subcategory||'';selectCat(f.category);if(regSub)setTimeout(function(){selectSub(regSub)},50);document.getElementById('regAmount').focus()}
 
 async function saveExpense(){
   var amt=parseFloat(document.getElementById('regAmount').value);var note=document.getElementById('regNote').value.trim();var err=document.getElementById('regErr');
   if(!amt||amt<=0){err.textContent='Ingresa un monto';return}if(!regCat){err.textContent='Selecciona categoría';return}
+  var actualSub=regSub;
+  if(regSub==='_custom'){
+    var customText=document.getElementById('regCustom').value.trim();
+    if(!customText){err.textContent='Escribe el nombre del producto/servicio';return}
+    actualSub=customText;
+  }
   if(editingId){
     var idx=D.expenses.findIndex(function(e){return e.id===editingId});
-    if(idx>=0){var exp=D.expenses[idx];exp.amount=amt;exp.category=regCat;exp.subcategory=regSub;exp.note=note;exp.extra=regExtra;
-      await postGAS({action:'editGasto',id:exp.id,timestamp:exp.timestamp,fecha:exp.date,hora:exp.time,monto:amt,categoria:regCat,subcategoria:regSub,nota:note,extraordinario:regExtra,periodKey:exp.periodKey})}
+    if(idx>=0){var exp=D.expenses[idx];exp.amount=amt;exp.category=regCat;exp.subcategory=actualSub;exp.note=note;exp.extra=regExtra;
+      await postGAS({action:'editGasto',id:exp.id,timestamp:exp.timestamp,fecha:exp.date,hora:exp.time,monto:amt,categoria:regCat,subcategoria:actualSub,nota:note,extraordinario:regExtra,periodKey:exp.periodKey})}
     editingId=null;closeModal('mReg');renderAll();toast('Gasto actualizado: '+fmtMoney(amt));return;
   }
-  var now=new Date();var exp={id:'exp_'+Date.now(),timestamp:now.getTime(),date:todayStr(),time:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),amount:amt,category:regCat,subcategory:regSub,note:note,extra:regExtra,periodKey:pk()};
+  var now=new Date();var exp={id:'exp_'+Date.now(),timestamp:now.getTime(),date:todayStr(),time:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),amount:amt,category:regCat,subcategory:actualSub,note:note,extra:regExtra,periodKey:pk()};
   D.expenses.push(exp);
   await postGAS({action:'saveGasto',id:exp.id,timestamp:exp.timestamp,fecha:exp.date,hora:exp.time,monto:exp.amount,categoria:exp.category,subcategoria:exp.subcategory,nota:exp.note,extraordinario:exp.extra,periodKey:exp.periodKey});
   closeModal('mReg');renderAll();toast('Gasto: '+fmtMoney(amt))
@@ -475,8 +619,8 @@ function openFixedExp(){var h='';if(!D.fixed.length)h='<div class="empty">Sin ga
 async function addFixed(){var name=document.getElementById('fixName').value.trim();var amt=parseFloat(document.getElementById('fixAmount').value);var freq=document.getElementById('fixFreq').value;var due=parseInt(document.getElementById('fixDue').value)||1;var cat=document.getElementById('fixCat').value;if(!name||!amt){alert('Completa campos');return}var f={id:'fix_'+Date.now(),name:name,amount:amt,frequency:freq,dueDay:due,category:cat};D.fixed.push(f);await postGAS({action:'saveFijo',id:f.id,nombre:f.name,monto:f.amount,frecuencia:f.frequency,diaPago:f.dueDay,categoria:f.category});document.getElementById('fixName').value='';document.getElementById('fixAmount').value='';document.getElementById('fixDue').value='';openFixedExp()}
 async function rmFixed(id){D.fixed=D.fixed.filter(function(f){return f.id!==id});await postGAS({action:'deleteFijo',id:id});openFixedExp()}
 
-function openFreqExp(){var h='';if(!D.frequent.length)h='<div class="empty">Sin frecuentes</div>';else D.frequent.forEach(function(f){var cat=CATS.find(function(c){return c.id===f.category});var sub=cat?cat.subs.find(function(s){return s.id===f.subcategory}):null;h+='<div class="fixed-item"><div class="fixed-info"><span class="fixed-icon">'+(cat?cat.icon:'📌')+'</span><div><div class="fixed-name">'+f.name+'</div><div class="fixed-freq">'+(cat?cat.name:'')+(sub?' · '+sub.name:'')+'</div></div></div><button onclick="rmFreq(\''+f.id+'\')" style="background:none;border:none;color:var(--er);cursor:pointer;font-size:1.1rem">✕</button></div>'});document.getElementById('mFreqList').innerHTML=h;var csel=document.getElementById('freqCat');csel.innerHTML='';CATS.forEach(function(c){csel.innerHTML+='<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>'});updFS();document.getElementById('freqCat').onchange=updFS;openModal('mFreq')}
-function updFS(){var catId=document.getElementById('freqCat').value;var sel=document.getElementById('freqSub');sel.innerHTML='<option value="">Sin sub</option>';var cat=CATS.find(function(c){return c.id===catId});if(cat)cat.subs.forEach(function(s){sel.innerHTML+='<option value="'+s.id+'">'+s.icon+' '+s.name+'</option>'})}
+function openFreqExp(){var h='';if(!D.frequent.length)h='<div class="empty">Sin frecuentes</div>';else D.frequent.forEach(function(f){var cat=CATS.find(function(c){return c.id===f.category});var sub=cat?findSubById(f.category,f.subcategory):null;h+='<div class="fixed-item"><div class="fixed-info"><span class="fixed-icon">'+(cat?cat.icon:'📌')+'</span><div><div class="fixed-name">'+f.name+'</div><div class="fixed-freq">'+(cat?cat.name:'')+(sub?' · '+sub.name:(f.subcategory?' · '+f.subcategory:''))+'</div></div></div><button onclick="rmFreq(\''+f.id+'\')" style="background:none;border:none;color:var(--er);cursor:pointer;font-size:1.1rem">✕</button></div>'});document.getElementById('mFreqList').innerHTML=h;var csel=document.getElementById('freqCat');csel.innerHTML='';CATS.forEach(function(c){csel.innerHTML+='<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>'});updFS();document.getElementById('freqCat').onchange=updFS;openModal('mFreq')}
+function updFS(){var catId=document.getElementById('freqCat').value;var sel=document.getElementById('freqSub');sel.innerHTML='<option value="">Sin sub</option>';var cat=CATS.find(function(c){return c.id===catId});if(cat)cat.subs.filter(function(s){return s.id!=='_custom'}).forEach(function(s){sel.innerHTML+='<option value="'+s.id+'">'+s.icon+' '+s.name+'</option>'})}
 async function addFrequent(){var name=document.getElementById('freqName').value.trim();var cat=document.getElementById('freqCat').value;var sub=document.getElementById('freqSub').value;if(!name){alert('Ponle nombre');return}var f={id:'freq_'+Date.now(),name:name,category:cat,subcategory:sub};D.frequent.push(f);await postGAS({action:'saveFrecuente',id:f.id,nombre:f.name,categoria:f.category,subcategoria:f.subcategory});document.getElementById('freqName').value='';openFreqExp()}
 async function rmFreq(id){D.frequent=D.frequent.filter(function(f){return f.id!==id});await postGAS({action:'deleteFrecuente',id:id});openFreqExp()}
 
