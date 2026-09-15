@@ -150,7 +150,6 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 </head>
 <body>
 
-<!-- PIN -->
 <div class="pin-screen hidden" id="pinScreen">
 <h1 class="dn">Mi Moneda</h1>
 <p class="sub">Ingresa tu código</p>
@@ -166,7 +165,6 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 </div>
 </div>
 
-<!-- LOADING -->
 <div class="load-screen hidden" id="loadScreen">
 <div class="emoji">💰</div>
 <div class="msg">Cargando tus datos...</div>
@@ -174,7 +172,6 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 <button class="btn btn-sm btn-ac hidden" id="retryBtn" onclick="startApp()" style="margin-top:10px;width:auto">Reintentar</button>
 </div>
 
-<!-- SETUP -->
 <div class="setup hidden" id="setup">
 <h1 class="dn">Mi Moneda</h1>
 <p class="sub">Tu control financiero personal</p>
@@ -187,7 +184,6 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 </div>
 </div>
 
-<!-- APP -->
 <div class="app" id="app">
 <div class="hdr"><div class="hdr-top"><div><div class="hdr-title dn">Mi Moneda</div></div><div style="text-align:right"><div class="hdr-period" id="hdrPeriod"></div></div></div></div>
 
@@ -228,7 +224,6 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 </div>
 </div>
 
-<!-- MODALS -->
 <div class="modal" id="mReg"><div class="modal-sheet"><div class="modal-hdr"><div class="modal-title" id="regTitle">Registrar Gasto</div><button class="modal-close" onclick="closeModal('mReg')">&times;</button></div><input type="number" class="amount-input" id="regAmount" inputmode="decimal" placeholder="0.00" step="0.01" oninput="updateCatAlarm()"><div class="section-title">Categoría</div><div class="cat-grid" id="regCatGrid"></div><div id="regSubWrap" class="hidden"><div class="section-title">Subcategoría</div><div class="sub-grid" id="regSubGrid"></div></div><div id="regCustomWrap" class="hidden custom-wrap"><div class="section-title">Escribe el nombre</div><input type="text" id="regCustom" placeholder="Ej: Cordero, Aceite de coco..." maxlength="30"></div><div id="regCatAlarm" class="hidden cat-alarm"></div><div id="regFreqWrap"><div class="section-title">Gastos frecuentes</div><div class="freq-list" id="regFreqList"></div></div><div class="toggle-row"><div class="toggle" id="regExtraToggle" onclick="toggleExtra()"></div><span>Gasto extraordinario</span></div><div style="margin-bottom:14px"><input type="text" id="regNote" placeholder="Nota (opcional)" style="width:100%;padding:12px;border:2px solid var(--bd);border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none"></div><div style="font-size:.8rem;color:var(--t2);margin-bottom:6px"><span id="regDateDisp"></span></div><div id="regErr" style="color:var(--er);text-align:center;margin-bottom:8px;font-size:.85rem;font-weight:600"></div><button class="btn btn-pr" id="regSaveBtn" onclick="saveExpense()">Guardar Gasto</button></div></div>
 
 <div class="modal" id="mAction"><div class="modal-sheet" style="padding:12px 20px 24px"><div class="modal-hdr"><div class="modal-title" id="actionTitle">Acción</div><button class="modal-close" onclick="closeModal('mAction')">&times;</button></div><button class="btn btn-ghost" style="margin-bottom:8px" onclick="editExpense()">✏️ Editar</button><button class="btn btn-er" style="margin-bottom:8px" onclick="confirmDelete()">🗑️ Eliminar</button><button class="btn btn-sm" style="background:var(--bg);color:var(--t2);margin:0 auto;width:auto" onclick="closeModal('mAction')">Cancelar</button></div></div>
@@ -303,37 +298,68 @@ function daysBetween(a,b){return Math.round((new Date(b+'T00:00:00')-new Date(a+
 function todayStr(){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')}
 function fmtMoney(v){return'$'+Math.abs(v).toFixed(2)}
 function fmtDate(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]}
+function tsToDateStr(ts){var d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 
 function getFixedMonthly(){
-  var t=0;
-  D.fixed.forEach(function(f){
+  var t=0;D.fixed.forEach(function(f){
     if(f.frequency==='mensual')t+=f.amount;
     else if(f.frequency==='quincenal')t+=f.amount*2;
     else if(f.frequency==='semanal')t+=Math.round(f.amount*4.33*100)/100;
+  });return t;
+}
+
+function getDueFixedExpenses(){
+  var k=pk(),now=new Date(),td=now.getDate(),tm=now.getMonth(),ty=now.getFullYear();
+  var dim=lastDay(ty,tm+1),result=[];
+  D.fixed.forEach(function(f){
+    var dueDays=[];
+    if(f.frequency==='mensual'){dueDays.push(Math.min(f.dueDay,dim));}
+    else if(f.frequency==='quincenal'){
+      dueDays.push(Math.min(f.dueDay,dim));
+      var d2=f.dueDay+15;if(d2>dim)d2-=dim;dueDays.push(d2);
+    }else if(f.frequency==='semanal'){
+      var d=f.dueDay;while(d<=dim){dueDays.push(d);d+=7;}
+    }
+    dueDays.forEach(function(dd){
+      if(dd<=td){
+        var exists=D.expenses.some(function(e){
+          return e.periodKey===k&&e.category===f.category&&e.note&&e.note.toLowerCase().indexOf(f.name.toLowerCase())>=0;
+        });
+        if(!exists){
+          var due=new Date(ty,tm,dd);
+          result.push({id:'vfx_'+f.id+'_'+dd,timestamp:due.getTime(),date:tsToDateStr(due.getTime()),time:'00:00',amount:f.amount,category:f.category,subcategory:'',displayName:f.name,note:'',extra:false,periodKey:k,isVirtual:true});
+        }
+      }
+    });
   });
-  return t;
+  return result;
 }
 
 function getSummary(){
-  var k=pk(),p=pDates(k),exp=D.expenses.filter(function(e){return e.periodKey===k});
-  var spent=exp.reduce(function(s,e){return s+e.amount},0);
-  var normal=exp.filter(function(e){return!e.extra}).reduce(function(s,e){return s+e.amount},0);
-  var extra=exp.filter(function(e){return e.extra}).reduce(function(s,e){return s+e.amount},0);
+  var k=pk(),p=pDates(k);
+  var realExp=D.expenses.filter(function(e){return e.periodKey===k});
+  var virtExp=getDueFixedExpenses();
+  var allExp=realExp.concat(virtExp);
+  var spentR=realExp.reduce(function(s,e){return s+e.amount},0);
+  var spentV=virtExp.reduce(function(s,e){return s+e.amount},0);
+  var spent=spentR+spentV;
+  var normal=realExp.filter(function(e){return!e.extra}).reduce(function(s,e){return s+e.amount},0);
+  var extra=realExp.filter(function(e){return e.extra}).reduce(function(s,e){return s+e.amount},0);
   var rem=p.budget-spent;
   var dl=Math.max(daysBetween(todayStr(),p.endDate),0);
   var totalDays=daysBetween(p.startDate,p.endDate)+1;
-  var fixedMonthly=getFixedMonthly();
-  var variableBudget=Math.max(p.budget-fixedMonthly,0);
-  var dailyRef=totalDays>0?variableBudget/totalDays:0;
+  var fixedM=getFixedMonthly();
+  var varBudget=Math.max(p.budget-fixedM,0);
+  var dailyRef=totalDays>0?varBudget/totalDays:0;
   var now=new Date();
   var todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
-  var spentToday=exp.filter(function(e){return e.timestamp>=todayStart}).reduce(function(s,e){return s+e.amount},0);
+  var spentToday=realExp.filter(function(e){return e.timestamp>=todayStart}).reduce(function(s,e){return s+e.amount},0);
   var daily=dailyRef-spentToday;
   var daysPassed=Math.max(daysBetween(p.startDate,todayStr())+1,1);
-  var ahorro=(dailyRef*daysPassed)-spent;
+  var ahorro=(dailyRef*daysPassed)-spentR;
   var pct=p.budget>0?spent/p.budget*100:0;
   var status=pct>=100?'err':pct>=75?'warn':'ok';
-  return{budget:p.budget,spent:spent,remaining:rem,daily:daily,dailyRef:dailyRef,ahorro:ahorro,pct:pct,status:status,normal:normal,extra:extra,daysLeft:dl,totalDays:totalDays,fixedMonthly:fixedMonthly,daysPassed:daysPassed,expenses:exp};
+  return{budget:p.budget,spent:spent,spentReal:spentR,remaining:rem,daily:daily,dailyRef:dailyRef,ahorro:ahorro,pct:pct,status:status,normal:normal,extra:extra,daysLeft:dl,totalDays:totalDays,fixedMonthly:fixedM,daysPassed:daysPassed,expenses:realExp,allExpenses:allExp,virtualExpenses:virtExp};
 }
 
 function getWeekSavings(){
@@ -360,8 +386,7 @@ function updateCatAlarm(){
   if(!limit){el.innerHTML='';el.classList.add('hidden');return}
   var spentInCat=0;
   D.expenses.filter(function(e){return e.periodKey===k&&e.category===regCat}).forEach(function(e){
-    if(editingId&&e.id===editingId)return;
-    spentInCat+=e.amount;
+    if(editingId&&e.id===editingId)return;spentInCat+=e.amount;
   });
   var amt=parseFloat(document.getElementById('regAmount').value)||0;
   var remaining=limit-spentInCat-amt;
@@ -392,21 +417,22 @@ function renderDash(){
   var s=getSummary();var pctBar=Math.min(s.pct,100);var barColor=s.status==='err'?'#EF5350':s.status==='warn'?'#FFB74D':'#81C784';
   document.getElementById('heroCard').innerHTML='<div class="hero-label">Disponible</div><div class="hero-amount dn">'+fmtMoney(s.remaining)+'</div><div class="hero-bar"><div class="hero-bar-fill" style="width:'+pctBar+'%;background:'+barColor+'"></div></div><div class="hero-pct">'+s.pct.toFixed(1)+'% gastado de '+fmtMoney(s.budget)+'</div>';
 
-  var ahorroSign=s.ahorro>0?'+':'';var ahorroClass=s.ahorro>0?'pos':s.ahorro<0?'neg':'';
-  var ahorroLabel=s.ahorro>0?'Ahorro':s.ahorro<0?'Deuda':'Ahorro';
-  var dailyDisplay=s.daily<0?'-$'+Math.abs(s.daily).toFixed(2):fmtMoney(s.daily);
-  var dailyClass=s.daily<0?'neg':'';
-  var ahorroDisplay=ahorroSign+fmtMoney(s.ahorro);
+  var aC=s.ahorro>0?'pos':s.ahorro<0?'neg':'';
+  var aL=s.ahorro>0?'Ahorro':s.ahorro<0?'Deuda':'Ahorro';
+  var dD=s.daily<0?'-$'+Math.abs(s.daily).toFixed(2):fmtMoney(s.daily);
+  var dC=s.daily<0?'neg':'';
+  var aS=s.ahorro>0?'+':'';var aD=aS+fmtMoney(s.ahorro);
+  var remColor=s.remaining>=0?'':'neg';
 
   document.getElementById('statsRow').innerHTML=
     '<div class="stat"><div class="stat-val">'+fmtMoney(s.spent)+'</div><div class="stat-lbl">Gastado</div></div>'+
-    '<div class="stat"><div class="stat-val '+dailyClass+'">'+dailyDisplay+'</div><div class="stat-lbl">Puedes hoy</div></div>'+
-    '<div class="stat"><div class="stat-val '+ahorroClass+'">'+ahorroDisplay+'</div><div class="stat-lbl">'+ahorroLabel+'</div></div>'+
-    '<div class="stat"><div class="stat-val dn">'+s.daysLeft+'</div><div class="stat-lbl">Días restantes</div></div>';
+    '<div class="stat"><div class="stat-val '+dC+'">'+dD+'</div><div class="stat-lbl">Puedes hoy</div></div>'+
+    '<div class="stat"><div class="stat-val '+aC+'">'+aD+'</div><div class="stat-lbl">'+aL+'</div></div>'+
+    '<div class="stat"><div class="stat-val dn '+remColor+'">'+fmtMoney(s.remaining)+'</div><div class="stat-lbl" style="text-transform:none;letter-spacing:0">'+s.daysLeft+' días</div></div>';
 
   var fib='';
   if(s.fixedMonthly>0){
-    fib='<div style="background:var(--sf);padding:12px 16px;border-radius:12px;margin-bottom:14px;font-size:.8rem;color:var(--t2);display:flex;justify-content:space-between;box-shadow:var(--sh)"><span>📌 Fijos: '+fmtMoney(s.fixedMonthly)+'</span><span>Consumo mes: '+fmtMoney(s.spent+s.fixedMonthly)+'</span></div>';
+    fib='<div style="background:var(--sf);padding:12px 16px;border-radius:12px;margin-bottom:14px;font-size:.8rem;color:var(--t2);display:flex;justify-content:space-between;box-shadow:var(--sh)"><span>📌 Fijos: '+fmtMoney(s.fixedMonthly)+'</span><span>Total mes: '+fmtMoney(s.spent)+'</span></div>';
   }
   document.getElementById('fixedInfoBar').innerHTML=fib;
 
@@ -418,23 +444,39 @@ function renderDash(){
   renderRecent('recentList',5);
 }
 
+function mergeExpenses(){
+  var k=pk();
+  var real=D.expenses.filter(function(e){return e.periodKey===k});
+  var virt=getDueFixedExpenses();
+  return real.concat(virt).sort(function(a,b){return b.timestamp-a.timestamp});
+}
+
 function renderRecent(targetId,max){
-  var exp=D.expenses.filter(function(e){return e.periodKey===pk()}).sort(function(a,b){return b.timestamp-a.timestamp});
-  if(max)exp=exp.slice(0,max);var rl='';
-  if(!exp.length)rl='<div class="empty">Sin gastos registrados</div>';
-  else exp.forEach(function(e){rl+=expItemHTML(e)});
+  var all=mergeExpenses();if(max)all=all.slice(0,max);
+  var rl='';
+  if(!all.length)rl='<div class="empty">Sin gastos registrados</div>';
+  else all.forEach(function(e){rl+=expItemHTML(e)});
   document.getElementById(targetId).innerHTML=rl;
 }
 
 function expItemHTML(e){
-  var cat=CATS.find(function(c){return c.id===e.category});var sub=findSubById(e.category,e.subcategory);
-  var icon=sub?sub.icon:(cat?cat.icon:'📌');var name=sub?sub.name:subDisplayName(e.category,e.subcategory);
-  if(!name)name=cat?cat.name:'Gasto';var isCustom=e.subcategory&&!sub;var time=new Date(e.timestamp);
+  var cat=CATS.find(function(c){return c.id===e.category});
+  var sub=findSubById(e.category,e.subcategory);
+  var icon=sub?sub.icon:(cat?cat.icon:'📌');
+  var name=e.displayName||(sub?sub.name:subDisplayName(e.category,e.subcategory));
+  if(!name)name=cat?cat.name:'Gasto';
+  var isCustom=e.subcategory&&!sub;
+  var time=new Date(e.timestamp);
+  var dDate=tsToDateStr(e.timestamp);
   var nameHtml=isCustom?'<span style="color:var(--ac);font-weight:700">'+name+'</span>':name;
-  return'<div class="expense-item"><div class="exp-left"><span class="exp-icon">'+icon+'</span><div class="exp-info"><div class="exp-name">'+nameHtml+'</div><div class="exp-detail">'+fmtDate(e.date)+' '+String(time.getHours()).padStart(2,'0')+':'+String(time.getMinutes()).padStart(2,'0')+(e.extra?' · ⚠️':'')+(e.note?' · '+e.note:'')+'</div></div></div><div class="exp-right"><div class="exp-amount'+(e.extra?' extra':'')+'">'+fmtMoney(e.amount)+'</div><button class="exp-menu" onclick="event.stopPropagation();openAction(\''+e.id+'\')">⋮</button></div></div>';
+  var badge=e.isVirtual?' <span style="font-size:.6rem;background:var(--ok-bg);color:var(--ok);padding:1px 6px;border-radius:4px;font-weight:700">FIJO</span>':'';
+  var menu=e.isVirtual?'':'<button class="exp-menu" onclick="event.stopPropagation();openAction(\''+e.id+'\')">⋮</button>';
+  return'<div class="expense-item"><div class="exp-left"><span class="exp-icon">'+icon+'</span><div class="exp-info"><div class="exp-name">'+nameHtml+badge+'</div><div class="exp-detail">'+fmtDate(dDate)+' '+String(time.getHours()).padStart(2,'0')+':'+String(time.getMinutes()).padStart(2,'0')+(e.extra?' · ⚠️':'')+(e.note?' · '+e.note:'')+'</div></div></div><div class="exp-right"><div class="exp-amount'+(e.extra?' extra':'')+'">'+fmtMoney(e.amount)+'</div>'+menu+'</div></div>';
 }
 
-function openAction(id){actionExpId=id;var e=D.expenses.find(function(x){return x.id===id});if(!e)return;
+function openAction(id){
+  if(id.indexOf('vfx_')===0)return;
+  actionExpId=id;var e=D.expenses.find(function(x){return x.id===id});if(!e)return;
   var dn=subDisplayName(e.category,e.subcategory);if(!dn){var c=CATS.find(function(x){return x.id===e.category});dn=c?c.name:'Gasto'}
   document.getElementById('actionTitle').textContent=dn+' — '+fmtMoney(e.amount);openModal('mAction')}
 
@@ -516,22 +558,25 @@ function renderHistSetup(){var hf='';[{id:'hoy',label:'Hoy'},{id:'7d',label:'7 d
 function setHF(f){histFilter=f;renderHist()}
 
 function renderHist(){
-  renderHistSetup();var k=pk();var exp=D.expenses.filter(function(e){return e.periodKey===k});var now=new Date();var today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-  var d7=new Date(now);d7.setDate(d7.getDate()-7);var d7S=d7.getFullYear()+'-'+String(d7.getMonth()+1).padStart(2,'0')+'-'+String(d7.getDate()).padStart(2,'0');
-  var ws=new Date(now);var dow=ws.getDay();var diff=dow===0?6:dow-1;ws.setDate(ws.getDate()-diff);var wsS=ws.getFullYear()+'-'+String(ws.getMonth()+1).padStart(2,'0')+'-'+String(ws.getDate()).padStart(2,'0');
-  if(histFilter==='hoy')exp=exp.filter(function(e){return e.date===today});else if(histFilter==='7d')exp=exp.filter(function(e){return e.date>=d7S});else if(histFilter==='semana')exp=exp.filter(function(e){return e.date>=wsS});
+  renderHistSetup();var exp=mergeExpenses();
+  var now=new Date();var today=tsToDateStr(now.getTime());
+  var d7=new Date(now);d7.setDate(d7.getDate()-7);var d7S=tsToDateStr(d7.getTime());
+  var ws=new Date(now);var dow=ws.getDay();var diff=dow===0?6:dow-1;ws.setDate(ws.getDate()-diff);var wsS=tsToDateStr(ws.getTime());
+  if(histFilter==='hoy')exp=exp.filter(function(e){return tsToDateStr(e.timestamp)===today});
+  else if(histFilter==='7d')exp=exp.filter(function(e){return tsToDateStr(e.timestamp)>=d7S});
+  else if(histFilter==='semana')exp=exp.filter(function(e){return tsToDateStr(e.timestamp)>=wsS});
   exp=exp.sort(function(a,b){return b.timestamp-a.timestamp});var total=exp.reduce(function(s,e){return s+e.amount},0);
   document.getElementById('histSummary').innerHTML='<div class="card" style="text-align:center;padding:16px"><div style="font-size:.8rem;color:var(--t2)">Total</div><div class="dn" style="font-size:1.8rem;font-weight:700;color:var(--pr)">'+fmtMoney(total)+'</div><div style="font-size:.8rem;color:var(--t2)">'+exp.length+' gasto(s)</div></div>';
   var hl='';if(!exp.length)hl='<div class="empty">Sin gastos</div>';
-  else{var ld='';exp.forEach(function(e){if(e.date!==ld){ld=e.date;hl+='<div style="font-size:.8rem;font-weight:700;color:var(--t2);margin:14px 0 8px">'+fmtDate(e.date)+'</div>'}hl+=expItemHTML(e)})}
+  else{var ld='';exp.forEach(function(e){var dd=tsToDateStr(e.timestamp);if(dd!==ld){ld=dd;hl+='<div style="font-size:.8rem;font-weight:700;color:var(--t2);margin:14px 0 8px">'+fmtDate(dd)+'</div>'}hl+=expItemHTML(e)})}
   document.getElementById('histList').innerHTML=hl
 }
 
 function renderSave(){
   var s=getSummary();var wk=getWeekSavings();var cs=getCatSummary();var h='';
-  var ahorroLabel=s.ahorro>=0?'Ahorro acumulado':'Deuda acumulada';
-  var ahorroColor=s.ahorro>=0?'var(--ok)':'var(--er)';
-  h+='<div class="card"><div style="text-align:center"><div style="font-size:.85rem;color:var(--t2);margin-bottom:4px">'+ahorroLabel+'</div><div class="dn" style="font-size:2.2rem;font-weight:700;color:'+ahorroColor+'">'+(s.ahorro>=0?'+':'-')+fmtMoney(s.ahorro)+'</div>'+(s.ahorro>0?'<div style="font-size:.85rem;color:var(--ok);margin-top:4px">¡Vas ahorrando '+fmtMoney(s.ahorro)+'!</div>':s.ahorro<0?'<div style="font-size:.85rem;color:var(--er);margin-top:4px">En deuda por '+fmtMoney(Math.abs(s.ahorro))+'</div>':'<div style="font-size:.85rem;color:var(--t2);margin-top:4px">En equilibrio</div>')+'</div></div>';
+  var aL=s.ahorro>=0?'Ahorro acumulado':'Deuda acumulada';
+  var aC=s.ahorro>=0?'var(--ok)':'var(--er)';
+  h+='<div class="card"><div style="text-align:center"><div style="font-size:.85rem;color:var(--t2);margin-bottom:4px">'+aL+'</div><div class="dn" style="font-size:2.2rem;font-weight:700;color:'+aC+'">'+(s.ahorro>=0?'+':'-')+fmtMoney(s.ahorro)+'</div>'+(s.ahorro>0?'<div style="font-size:.85rem;color:var(--ok);margin-top:4px">¡Vas ahorrando '+fmtMoney(s.ahorro)+'!</div>':s.ahorro<0?'<div style="font-size:.85rem;color:var(--er);margin-top:4px">En deuda por '+fmtMoney(Math.abs(s.ahorro))+'</div>':'<div style="font-size:.85rem;color:var(--t2);margin-top:4px">En equilibrio</div>')+'</div></div>';
   h+='<div class="card"><div style="font-weight:700;font-size:.9rem;margin-bottom:12px">Referencia diaria</div><div style="font-size:.8rem;color:var(--t2);margin-bottom:10px">Presupuesto: '+fmtMoney(s.budget)+(s.fixedMonthly>0?' · Fijos: '+fmtMoney(s.fixedMonthly):'')+' · Disponible: '+fmtMoney(Math.max(s.budget-s.fixedMonthly,0))+' · Día: '+fmtMoney(s.dailyRef)+'</div></div>';
   h+='<div class="card"><div style="font-weight:700;font-size:.9rem;margin-bottom:12px">Semanas</div><div style="font-size:.8rem;color:var(--t2);margin-bottom:10px">Ref. semanal: '+fmtMoney(wk.weeklyBase)+'</div>';
   wk.weeks.forEach(function(w){var pct=w.reference>0?w.spent/w.reference*100:0;var barC=w.savings>=0?'var(--ok)':'var(--er)';h+='<div class="week-card"><div class="week-title">Semana '+w.index+(w.isCurrent?' (actual)':w.isPast?'':' (próxima)')+'</div><div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:4px"><span>Ref: '+fmtMoney(w.reference)+'</span><span>Gastado: '+fmtMoney(w.spent)+'</span></div><div class="week-bar"><div class="week-bar-fill" style="width:'+Math.min(pct,100)+'%;background:'+barC+'"></div></div><div style="font-size:.8rem;color:'+(w.savings>=0?'var(--ok)':'var(--er)')+'">Ahorro: '+(w.savings>=0?'+':'')+fmtMoney(w.savings)+'</div></div>'});
