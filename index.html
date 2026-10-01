@@ -558,7 +558,7 @@ function getSummary(){
   var daysPassed=Math.max(daysBetween(p.startDate,todayStr())+1,1);
   var ahorro=(dailyRef*daysPassed)-spentVar;
   var pct=varBudget>0?(spentVar/varBudget)*100:0;
-  var daysLeft=Math.max(daysBetween(todayStr(),p.endDate),0);
+  var daysLeft=Math.max(daysBetween(todayStr(),p.endDate)+1,0);
   return{
     budget:p.budget,varBudget:varBudget,spentTotal:spentTotal,spentVar:spentVar,
     spentFixedReg:spentFixedReg,pendingFixed:pending.total,pendingItems:pending.items,
@@ -683,7 +683,7 @@ function renderDash(){
   var st='';
   st+='<div class="stat"><div class="stat-val">'+fmtPos(s.spentTotal)+'</div><div class="stat-lbl">Gastado</div></div>';
   st+='<div class="stat"><div class="stat-val'+(s.canSpendToday<=0?' neg':'')+'">'+fmtPos(s.canSpendToday)+'</div><div class="stat-lbl">Puedes hoy</div></div>';
-  st+='<div class="stat"><div class="stat-val'+(s.pendingFixed>0?' neg':'')+'">'+fmtPos(s.pendingFixed)+'</div><div class="stat-lbl">Pago pendiente</div></div>';
+  st+='<div class="stat"><div class="stat-val'+(s.ahorro<0?' neg':'')+'">'+(s.ahorro>=0?'+':'-')+fmtPos(s.ahorro)+'</div><div class="stat-lbl">'+(s.ahorro>=0?'Ahorro':'Deuda')+'</div></div>';
   st+='<div class="stat"><div class="stat-val dn">'+fmtPos(s.disponible)+'</div><div class="stat-lbl" style="text-transform:none;letter-spacing:0">'+s.daysLeft+' días</div></div>';
   document.getElementById('statsRow').innerHTML=st;
 
