@@ -555,8 +555,12 @@ function getSummary(){
   var spentToday=0;
   allExp.forEach(function(e){if(!isFixedRelated(e)&&e.timestamp>=todayStart)spentToday+=e.amount});
   var canSpendToday=disponible<=0?0:Math.max(0,Math.min(dailyRef-spentToday,disponible));
-  var daysPassed=Math.max(daysBetween(p.startDate,todayStr())+1,1);
-  var ahorro=(dailyRef*daysPassed)-spentVar;
+  var completedDays=Math.max(daysBetween(p.startDate,todayStr()),0);
+  var spentCompleted=0;
+  allExp.forEach(function(e){if(!isFixedRelated(e)&&e.date<todayStr())spentCompleted+=e.amount});
+  var todayExcess=Math.max(0,spentToday-dailyRef);
+  var ahorro=(dailyRef*completedDays)-spentCompleted-todayExcess;
+  var daysPassed=completedDays;
   var pct=varBudget>0?(spentVar/varBudget)*100:0;
   var daysLeft=Math.max(daysBetween(todayStr(),p.endDate)+1,0);
   return{
