@@ -174,6 +174,10 @@ html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);
 .hist-back{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .hist-back button{background:none;border:none;font-size:1.2rem;cursor:pointer;padding:4px 8px;color:var(--tx)}
 .hb-title{font-weight:700;font-size:1.15rem}
+.stat{position:relative;overflow:hidden}
+.badge-day{position:absolute;top:5px;right:5px;background:var(--ac);color:#fff;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:5px;letter-spacing:.5px}
+.badge-month{position:absolute;bottom:5px;right:5px;background:var(--pr);color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.5px}
+.exp-dot{width:7px;height:7px;border-radius:50%;background:var(--wn);flex-shrink:0;margin-right:6px}
 @media(max-width:380px){.hero-amount{font-size:2.2rem}.cat-grid{grid-template-columns:repeat(4,1fr)}.quick-grid{grid-template-columns:repeat(4,1fr)}.stat-val{font-size:1.1rem}}
 </style>
 </head>
@@ -660,7 +664,13 @@ function goTab(t,btn){
 
 function openModal(id){document.getElementById(id).classList.add('on')}
 function closeModal(id){document.getElementById(id).classList.remove('on')}
-function renderAll(){document.getElementById('hdrPeriod').textContent=periodLabel(pk());renderDash()}
+function renderAll(){
+  var n=new Date();
+  var ds=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var ms=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('hdrPeriod').textContent=ds[n.getDay()]+', '+n.getDate()+' '+ms[n.getMonth()]+' '+n.getFullYear();
+  renderDash();
+}
 
 /* ===== DASHBOARD ===== */
 function renderDash(){
@@ -685,8 +695,9 @@ function renderDash(){
 
   /* Stats */
   var st='';
-  st+='<div class="stat"><div class="stat-val">'+fmtPos(s.spentTotal)+'</div><div class="stat-lbl">Gastado</div></div>';
-  st+='<div class="stat"><div class="stat-val'+(s.canSpendToday<=0?' neg':'')+'">'+fmtPos(s.canSpendToday)+'</div><div class="stat-lbl">Puedes hoy</div></div>';
+  var ms2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  st+='<div class="stat"><div class="stat-val">'+fmtPos(s.spentTotal)+'</div><div class="stat-lbl">Gastado</div><div class="badge-month">'+ms2[new Date().getMonth()]+'</div></div>';
+  st+='<div class="stat"><div class="stat-val'+(s.canSpendToday<=0?' neg':'')+'">'+fmtPos(s.canSpendToday)+'</div><div class="stat-lbl">Puedes hoy</div><div class="badge-day">'+new Date().getDate()+'</div></div>';
   st+='<div class="stat"><div class="stat-val'+(s.ahorro<0?' neg':'')+'">'+(s.ahorro>=0?'+':'-')+fmtPos(s.ahorro)+'</div><div class="stat-lbl">'+(s.ahorro>=0?'Ahorro':'Deuda')+'</div></div>';
   st+='<div class="stat"><div class="stat-val dn">'+fmtPos(s.disponible)+'</div><div class="stat-lbl" style="text-transform:none;letter-spacing:0">'+s.daysLeft+' días</div></div>';
   document.getElementById('statsRow').innerHTML=st;
@@ -735,11 +746,13 @@ function expItemHTML(e){
   var time=new Date(e.timestamp);
   var nameHtml=isCustom?'<span style="color:var(--ac);font-weight:700">'+name+'</span>':name;
   var tm=String(time.getHours()).padStart(2,'0')+':'+String(time.getMinutes()).padStart(2,'0');
-  var detail=fmtDate(tsToDateStr(e.timestamp))+' '+tm+(e.extra?' · ⚠️':'')+(e.note?' · '+e.note:'');
+  var detail=fmtDate(tsToDateStr(e.timestamp))+' '+tm+(e.note?' · '+e.note:'');
+  var dotHtml=e.extra?'<div class="exp-dot"></div>':'';
   return '<div class="expense-item">'+
     '<div class="exp-left"><span class="exp-icon">'+icon+'</span>'+
     '<div class="exp-info"><div class="exp-name">'+nameHtml+'</div><div class="exp-detail">'+detail+'</div></div></div>'+
-    '<div class="exp-right"><div class="exp-amount'+(e.extra?' extra':'')+'">'+fmtPos(e.amount)+'</div>'+
+    '<div class="exp-right" style="align-items:center">'+dotHtml+
+    '<div class="exp-amount'+(e.extra?' extra':'')+'">'+fmtPos(e.amount)+'</div>'+
     '<button class="exp-menu" onclick="event.stopPropagation();openAction(\''+e.id+'\')">⋮</button></div></div>';
 }
 
