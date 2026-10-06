@@ -701,8 +701,8 @@ function renderDash(){
   var ms2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var ds2=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
   var st='';
-  st+='<div class="stat"><div class="stat-val">'+fmtPos(s.spentTotal)+'</div><div class="stat-lbl">Gastado</div></div>';
-  st+='<div class="stat"><div class="cal-box"><div class="cal-top">'+['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][new Date().getMonth()]+'</div><div class="cal-day">'+new Date().getDate()+'</div></div><div class="stat-val'+(s.canSpendToday<=0?' neg':'')+'">'+fmtPos(s.canSpendToday)+'</div><div class="stat-lbl">Puedes hoy</div></div>';
+  st+='<div class="stat"><div class="stat-val">'+fmtPos(s.spentTotal)+'</div><div class="stat-lbl">Gastado '+['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][new Date().getMonth()]+'</div></div>';
+  st+='<div class="stat"><div class="cal-box"><div class="cal-top">'+['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'][new Date().getDay()]+'</div><div class="cal-day">'+new Date().getDate()+'</div></div><div class="stat-val'+(s.canSpendToday<=0?' neg':'')+'">'+fmtPos(s.canSpendToday)+'</div><div class="stat-lbl">Puedes hoy</div></div>';
   st+='<div class="stat"><div class="stat-val'+(s.ahorro<0?' neg':'')+'">'+(s.ahorro>=0?'+':'-')+fmtPos(s.ahorro)+'</div><div class="stat-lbl">'+(s.ahorro>=0?'Ahorro':'Deuda')+'</div></div>';
   st+='<div class="stat"><div class="stat-val dn">'+fmtPos(s.disponible)+'</div><div class="stat-lbl" style="text-transform:none;letter-spacing:0">'+s.daysLeft+' días</div></div>';
   document.getElementById('statsRow').innerHTML=st;
